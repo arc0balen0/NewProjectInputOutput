@@ -1,9 +1,6 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.util.Scanner;
+import java.io.*;
 
-class Basket {
+class Basket implements Serializable {
     private String[] products;
     private int[] prices;
     private int[] quantities;
@@ -15,11 +12,11 @@ class Basket {
     }
 
     public void addToCart(int productNum, int amount) {
-        if (productNum >= 0 && productNum < products.length) {
+        if (productNum >= 0 && productNum < products.length && amount > 0) {
             quantities[productNum] += amount;
-            System.out.println("Товар добавлен в корзину.");
+            System.out.println(amount + " шт. товара '" + products[productNum] + "' добавлено в корзину.");
         } else {
-            System.out.println("Некорректный номер продукта.");
+            System.out.println("Ошибка добавления товара в корзину.");
         }
     }
 
@@ -27,52 +24,31 @@ class Basket {
         System.out.println("Содержимое корзины:");
         for (int i = 0; i < products.length; i++) {
             if (quantities[i] > 0) {
-                System.out.println(products[i] + " - " + quantities[i] + " шт. - " + prices[i] * quantities[i] + " руб.");
+                System.out.println(products[i] + " - " + quantities[i] + " шт. по цене " + prices[i] + " руб/шт.");
             }
         }
-        System.out.println();
     }
 
-    public void saveTxt(File textFile) {
-        try (PrintWriter writer = new PrintWriter(textFile)) {
-            for (int i = 0; i < products.length; i++) {
-                writer.println(products[i] + ":" + quantities[i]);
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("Ошибка сохранения корзины в файл.");
+    public void saveBin(File file) {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file))) {
+            outputStream.writeObject(this);
+            System.out.println("Корзина сохранена в файл " + file.getName());
+        } catch (IOException e) {
+            System.out.println("Ошибка сохранения корзины в бинарный файл.");
             e.printStackTrace();
         }
     }
 
-    public static Basket loadFromTxtFile(File textFile) {
-        try (Scanner scanner = new Scanner(textFile)) {
-            String[] products = new String[5];
-            int[] quantities = new int[5];
-
-            int index = 0;
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                String[] parts = line.split(":");
-                products[index] = parts[0];
-                quantities[index] = Integer.parseInt(parts[1]);
-                index++;
-            }
-
-            int[] prices = {125, 75, 220, 925, 645};
-
-            Basket basket = new Basket(products, prices);
-            basket.setQuantities(quantities);
-
+    public static Basket loadFromBinFile(File file) {
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file))) {
+            Basket basket = (Basket) inputStream.readObject();
+            System.out.println("Корзина загружена из файла " + file.getName());
             return basket;
-        } catch (FileNotFoundException e) {
-            System.out.println("Файл корзины не найден.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Ошибка загрузки корзины из бинарного файла.");
+            e.printStackTrace();
             return null;
         }
     }
-
-    public void setQuantities(int[] quantities) {
-        if (quantities.length == this.quantities.length) {
-            this.quantities = quantities;
-        }
-    }
 }
+

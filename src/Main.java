@@ -5,9 +5,9 @@ public class Main {
     public static void main(String[] args) {
         String[] products = {"Молоко", "Картофель", "Масло", "Форель", "Баранина"};
         int[] prices = {125, 75, 220, 925, 645};
-        File textFile = new File("basket.txt");
+        File binFile = new File("basket.bin");
 
-        Basket basket = Basket.loadFromTxtFile(textFile);
+        Basket basket = Basket.loadFromBinFile(binFile);
         if (basket == null) {
             basket = new Basket(products, prices);
         }
@@ -15,41 +15,29 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.println("Выберите действие:");
-            System.out.println("1 - Добавить товар в корзину");
-            System.out.println("2 - Вывести содержимое корзины");
-            System.out.println("3 - Сохранить корзину в файл");
-            System.out.println("0 - Выход");
+            System.out.println("\nМеню:");
+            System.out.println("1. Добавить товар в корзину");
+            System.out.println("2. Вывести содержимое корзины");
+            System.out.println("0. Сохранить корзину и выйти");
+            System.out.print("Выберите опцию: ");
+            int option = scanner.nextInt();
+            scanner.nextLine(); // Считываем символ новой строки после считывания числа
 
-            int choice = scanner.nextInt();
-
-            switch (choice) {
-                case 1:
-                    System.out.println("Введите номер продукта (1-" + products.length + "):");
-                    int productNum = scanner.nextInt() - 1;
-                    System.out.println("Введите количество:");
-                    int amount = scanner.nextInt();
-                    basket.addToCart(productNum, amount);
-                    break;
-                case 2:
-                    basket.printCart();
-                    break;
-                case 3:
-                    basket.saveTxt(textFile);
-                    System.out.println("Корзина сохранена в файл " + textFile.getName());
-                    break;
-                case 0:
-                    basket.saveTxt(textFile);
-                    System.out.println("Программа завершена.");
-                    scanner.close();
-                    return;
-                default:
-                    System.out.println("Некорректный выбор.");
-                    break;
+            if (option == 0) {
+                basket.saveBin(binFile);
+                break;
+            } else if (option == 1) {
+                System.out.println("Введите номер товара и количество через пробел:");
+                String input = scanner.nextLine();
+                String[] parts = input.split(" ");
+                int productNum = Integer.parseInt(parts[0]) - 1;
+                int quantity = Integer.parseInt(parts[1]);
+                basket.addToCart(productNum, quantity);
+            } else if (option == 2) {
+                basket.printCart();
+            } else {
+                System.out.println("Неверная опция. Повторите ввод.");
             }
-
-            scanner.nextLine(); // Очистка буфера после считывания числа
-            System.out.println();
         }
     }
 }
