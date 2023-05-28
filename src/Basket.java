@@ -1,38 +1,71 @@
 import java.io.*;
+import java.util.Scanner;
 
-class Basket implements Serializable {
+public class Basket implements Serializable {
     private String[] products;
-    private int[] prices;
     private int[] quantities;
+    private int[] prices;
 
-    public Basket(String[] products, int[] prices) {
-        this.products = products;
-        this.prices = prices;
-        this.quantities = new int[products.length];
+    public Basket() {
+        products = new String[5];
+        quantities = new int[5];
+        prices = new int[5];
     }
 
-    public void addToCart(int productNum, int amount) {
-        if (productNum >= 0 && productNum < products.length && amount > 0) {
-            quantities[productNum] += amount;
-            System.out.println(amount + " шт. товара '" + products[productNum] + "' добавлено в корзину.");
-        } else {
-            System.out.println("Ошибка добавления товара в корзину.");
-        }
+    public void addToCart(int productNum, int quantity) {
+        quantities[productNum] += quantity;
     }
 
     public void printCart() {
         System.out.println("Содержимое корзины:");
         for (int i = 0; i < products.length; i++) {
             if (quantities[i] > 0) {
-                System.out.println(products[i] + " - " + quantities[i] + " шт. по цене " + prices[i] + " руб/шт.");
+                System.out.println(products[i] + ": " + quantities[i] + " шт.");
             }
+        }
+    }
+
+    public void saveTxt(File textFile) {
+        try (PrintWriter writer = new PrintWriter(textFile)) {
+            for (int i = 0; i < products.length; i++) {
+                writer.println(products[i] + ":" + quantities[i] + ":" + prices[i]);
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Ошибка сохранения корзины в файл.");
+            e.printStackTrace();
+        }
+    }
+
+    public static Basket loadFromTxtFile(File textFile) {
+        try (Scanner scanner = new Scanner(textFile)) {
+            String[] products = new String[5];
+            int[] quantities = new int[5];
+            int[] prices = new int[5];
+
+            int index = 0;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] parts = line.split(":");
+                products[index] = parts[0];
+                quantities[index] = Integer.parseInt(parts[1]);
+                prices[index] = Integer.parseInt(parts[2]);
+                index++;
+            }
+
+            Basket basket = new Basket();
+            basket.setProducts(products);
+            basket.setQuantities(quantities);
+            basket.setPrices(prices);
+            return basket;
+        } catch (FileNotFoundException e) {
+            System.out.println("Файл корзины не найден. Создана новая корзина.");
+            return null;
         }
     }
 
     public void saveBin(File file) {
         try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file))) {
             outputStream.writeObject(this);
-            System.out.println("Корзина сохранена в файл " + file.getName());
         } catch (IOException e) {
             System.out.println("Ошибка сохранения корзины в бинарный файл.");
             e.printStackTrace();
@@ -41,14 +74,24 @@ class Basket implements Serializable {
 
     public static Basket loadFromBinFile(File file) {
         try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file))) {
-            Basket basket = (Basket) inputStream.readObject();
-            System.out.println("Корзина загружена из файла " + file.getName());
-            return basket;
+            return (Basket) inputStream.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Ошибка загрузки корзины из бинарного файла.");
-            e.printStackTrace();
+            System.out.println("Файл корзины не найден. Создана новая корзина.");
             return null;
         }
     }
-}
 
+    // Геттеры и сеттеры для полей products, quantities, prices
+
+    public void setProducts(String[] products) {
+        this.products = products;
+    }
+
+    public void setQuantities(int[] quantities) {
+        this.quantities = quantities;
+    }
+
+    public void setPrices(int[] prices) {
+        this.prices = prices;
+    }
+}
