@@ -1,63 +1,76 @@
 package org.example;
 
+import org.example.Basket;
+import org.example.ConfigParser;
+
 import java.io.File;
+import java.io.ObjectInputFilter;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        String[] products = {"Молоко", "Картофель", "Масло", "Форель", "Баранина"};
-        int[] prices = {125, 75, 220, 925, 645};
-        File textFile = new File("basket.txt");
-        File jsonFile = new File("basket.json");
-        File logFile = new File("log.csv");
+        // Чтение файла конфигурации
+        File configFile = new File("shop.xml");
+        Config config = ConfigParser.parseConfig(configFile);
+        if (config == null) {
+            System.out.println("Ошибка чтения файла конфигурации. Программа будет завершена.");
+            return;
+        }
 
-        Basket basket = Basket.deserializeFromJson(jsonFile);
-        if (basket == null) {
+        // Создание корзины
+        Basket basket;
+        if (config.isLoadEnabled()) {
+            File loadFile = new File(config.getLoadFileName());
+            if (config.getLoadFormat().equalsIgnoreCase("json")) {
+                basket = Basket.loadFromJsonFile(loadFile);
+            } else {
+                basket = Basket.loadFromTxtFile(loadFile);
+            }
+            if (basket == null) {
+                System.out.println("Ошибка загрузки корзины. Будет создана новая корзина.");
+                String[] products = {"Товар 1", "Товар 2", "Товар 3", "Товар 4", "Товар 5"};
+                int[] prices = {125, 75, 220, 925, 645};
+                basket = new Basket(products, prices);
+            }
+        } else {
+            String[] products = {"Товар 1", "Товар 2", "Товар 3", "Товар 4", "Товар 5"};
+            int[] prices = {125, 75, 220, 925, 645};
             basket = new Basket(products, prices);
         }
 
+        // Взаимодействие с пользователем
+        Scanner scanner = new Scanner(System.in);
         ClientLog clientLog = new ClientLog();
 
-        Scanner scanner = new Scanner(System.in);
-
         while (true) {
-            System.out.println("Выберите действие:");
-            System.out.println("1 - Добавить товар в корзину");
-            System.out.println("2 - Вывести содержимое корзины");
-            System.out.println("3 - Сохранить корзину в файл");
-            System.out.println("0 - Выход");
-
-            int choice = scanner.nextInt();
-
-            switch (choice) {
-                case 1:
-                    System.out.println("Введите номер продукта (1-" + products.length + "):");
-                    int productNum = scanner.nextInt() - 1;
-                    System.out.println("Введите количество:");
-                    int amount = scanner.nextInt();
-                    basket.addToCart(productNum, amount);
-                    clientLog.log(productNum, amount);
-                    break;
-                case 2:
-                    basket.printCart();
-                    break;
-                case 3:
-                    basket.serializeToJson(jsonFile);
-                    System.out.println("Корзина сохранена в файл " + jsonFile.getName());
-                    break;
-                case 0:
-                    basket.serializeToJson(jsonFile);
-                    clientLog.exportAsCSV(logFile);
-                    System.out.println("Программа завершена.");
-                    scanner.close();
-                    return;
-                default:
-                    System.out.println("Некорректный выбор.");
-                    break;
+            System.out.println("Введите номер товара (от 1 до 5) или 0 для выхода:");
+            int productNum = scanner.nextInt();
+            if (productNum == 0) {
+                break;
             }
 
-            scanner.nextLine(); // Очистка буфера после считывания числа
-            System.out.println();
+            System.out.println("Введите количество товара:");
+            int amount = scanner.nextInt();
+
+            basket.addToCart(productNum - 1, amount);
+            clientLog.log(productNum, amount);
+
+            if (config.isSaveEnabled()) {
+                File saveFile = new File(config.getSaveFileName());
+                if (config.getSaveFormat().equalsIgnoreCase("json")) {
+                    basket.saveToJsonFile(saveFile);
+                } else {
+                    basket.saveTxt(saveFile);
+                }
+            }
+        }
+
+        scanner.close();
+
+        // Сохранение лога
+        if (config.isLogEnabled()) {
+            File logFile = new File(config.getLogFileName());
+            clientLog.exportAsCSV(logFile);
         }
     }
 }

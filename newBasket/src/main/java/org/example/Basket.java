@@ -2,15 +2,13 @@ package org.example;
 
 import com.google.gson.Gson;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.Scanner;
 
-class Basket {
-    private final String[] products;
-    private final int[] prices;
-    private final int[] quantities;
+public class Basket {
+    private String[] products;
+    private int[] prices;
+    private int[] quantities;
 
     public Basket(String[] products, int[] prices) {
         this.products = products;
@@ -37,18 +35,54 @@ class Basket {
         System.out.println();
     }
 
-    public void serializeToJson(File jsonFile) {
+    public void saveTxt(File textFile) {
+        try (PrintWriter writer = new PrintWriter(textFile)) {
+            for (int i = 0; i < products.length; i++) {
+                writer.println(products[i] + ":" + quantities[i]);
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Ошибка сохранения корзины в файл.");
+            e.printStackTrace();
+        }
+    }
+
+    public void saveToJsonFile(File jsonFile) {
         try (FileWriter writer = new FileWriter(jsonFile)) {
             Gson gson = new Gson();
-            String json = gson.toJson(this);
-            writer.write(json);
+            gson.toJson(this, writer);
         } catch (IOException e) {
             System.out.println("Ошибка сохранения корзины в JSON-файл.");
             e.printStackTrace();
         }
     }
 
-    public static Basket deserializeFromJson(File jsonFile) {
+    public static Basket loadFromTxtFile(File textFile) {
+        try (Scanner scanner = new Scanner(textFile)) {
+            String[] products = new String[5];
+            int[] quantities = new int[5];
+
+            int index = 0;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] parts = line.split(":");
+                products[index] = parts[0];
+                quantities[index] = Integer.parseInt(parts[1]);
+                index++;
+            }
+
+            int[] prices = {125, 75, 220, 925, 645};
+
+            Basket basket = new Basket(products, prices);
+            basket.setQuantities(quantities);
+
+            return basket;
+        } catch (FileNotFoundException e) {
+            System.out.println("Файл корзины не найден.");
+            return null;
+        }
+    }
+
+    public static Basket loadFromJsonFile(File jsonFile) {
         try (FileReader reader = new FileReader(jsonFile)) {
             Gson gson = new Gson();
             Basket basket = gson.fromJson(reader, Basket.class);
@@ -56,6 +90,12 @@ class Basket {
         } catch (IOException e) {
             System.out.println("Ошибка загрузки корзины из JSON-файла.");
             return null;
+        }
+    }
+
+    public void setQuantities(int[] quantities) {
+        if (quantities.length == this.quantities.length) {
+            this.quantities = quantities;
         }
     }
 }

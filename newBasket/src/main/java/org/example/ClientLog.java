@@ -3,24 +3,28 @@ package org.example;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 class ClientLog {
-    private StringBuilder log;
+    private List<String> log;
 
     public ClientLog() {
-        this.log = new StringBuilder();
+        this.log = new ArrayList<>();
     }
 
     public void log(int productNum, int amount) {
-        log.append(productNum).append("\n").append(amount).append("\n");
+        log.add(productNum + "," + amount);
     }
 
-    public void exportAsCSV(File txtFile) {
-        try (PrintWriter writer = new PrintWriter(txtFile)) {
+    public void exportAsCSV(File csvFile) {
+        try (PrintWriter writer = new PrintWriter(csvFile)) {
             writer.println("productNum,amount");
-            writer.print(log.toString());
+            for (String entry : log) {
+                writer.println(entry);
+            }
         } catch (FileNotFoundException e) {
-            System.out.println("Ошибка сохранения журнала в файл.");
+            System.out.println("Ошибка сохранения лога в файл.");
             e.printStackTrace();
         }
     }
